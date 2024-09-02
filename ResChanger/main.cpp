@@ -1,15 +1,15 @@
 #include <iostream>
 #include <windows.h>
+#include <assert.h>
 
 using namespace std;
 
 static HWND mainwindow;
-static HWND hdbutton;
-static HWND fhdbutton;
+static HWND playModeBttn;
+static HWND defModeBttn;
 
-#define HDBTN (100)
-#define FHDBTN (99)
-#define FREQBTN (98)
+#define PLAY_MODE_BTN (100)
+#define DEF_MODE_BTN  (99)
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -18,7 +18,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #define BUTTON_WIDTH 100
 #define BUTTON_HEIGHT 30
 
-bool SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq);
+enum class PresetMode
+{
+	PLAY, DEFAULT
+};
+
+void SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq);
+void SetFilterKeysParameters(DWORD flags, DWORD ignoreUnder, DWORD repeatDelay, DWORD repeatRate);
+void SetMode(PresetMode mode);
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_ PWSTR pCmdLine, _In_ int nCmdShow)
 {
@@ -46,42 +53,23 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_
 	int btn2_posx = (WINDOW_WIDTH / 2) - (BUTTON_WIDTH / 2);
 	int btn2_posy = (WINDOW_HEIGHT / 2);
 
-	fhdbutton = CreateWindow("BUTTON", "1080p 60Hz", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_FLAT | BS_RIGHTBUTTON, btn1_posx, btn1_posy, BUTTON_WIDTH, BUTTON_HEIGHT, mainwindow, (HMENU)FHDBTN, (HINSTANCE)GetWindowLong(mainwindow, GWL_HINSTANCE), NULL);
-	hdbutton = CreateWindow("BUTTON", "720p 75Hz", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_FLAT | BS_RIGHTBUTTON, btn2_posx, btn2_posy, BUTTON_WIDTH, BUTTON_HEIGHT, mainwindow, (HMENU)HDBTN, (HINSTANCE)GetWindowLong(mainwindow, GWL_HINSTANCE), NULL);
+	defModeBttn = CreateWindow("BUTTON", "Play mode", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_FLAT | BS_RIGHTBUTTON, btn1_posx, btn1_posy, BUTTON_WIDTH, BUTTON_HEIGHT, mainwindow, (HMENU)PLAY_MODE_BTN, (HINSTANCE)GetWindowLong(mainwindow, GWLP_HINSTANCE), NULL);
+	playModeBttn =  CreateWindow("BUTTON", "Default", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_FLAT | BS_RIGHTBUTTON, btn2_posx, btn2_posy, BUTTON_WIDTH, BUTTON_HEIGHT, mainwindow, (HMENU)DEF_MODE_BTN, (HINSTANCE)GetWindowLong(mainwindow, GWLP_HINSTANCE), NULL);
 
 	ShowWindow(mainwindow, nCmdShow);
 	UpdateWindow(mainwindow);
-
-	int resx = GetSystemMetrics(SM_CXFULLSCREEN);
-	int resy = GetSystemMetrics(SM_CYFULLSCREEN);
-
-	if (resx == 1920)
-	{
-		EnableWindow(fhdbutton, false);
-	}
-
-	if (resx == 1280)
-	{
-		EnableWindow(hdbutton, false);
-	}
 
 	MSG msg = {};
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		if (GetAsyncKeyState(VK_F1))
 		{
-			SetScreenResolution(0, 1280, 720, 75.025f);
-			EnableWindow(hdbutton, false);
-			EnableWindow(fhdbutton, true);
-			SetScreenResolution(1, 1280, 1024, 75.025f);
+			SetMode(PresetMode::PLAY);
 		}
 
 		if (GetAsyncKeyState(VK_F2))
 		{
-			SetScreenResolution(0, 1920, 1080, 60.0f);
-			EnableWindow(hdbutton, true);
-			EnableWindow(fhdbutton, false);
-			SetScreenResolution(1, 1280, 1024, 75.025f);
+			SetMode(PresetMode::DEFAULT);
 		}
 
 		TranslateMessage(&msg);
@@ -91,7 +79,35 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_
 	return 0;
 }
 
-bool SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq)
+void SetFilterKeysParameters(DWORD flags, DWORD ignoreUnder, DWORD repeatDelay, DWORD repeatRate)
+{
+	FILTERKEYS fk = { 0 };
+	fk.cbSize = sizeof(FILTERKEYS);
+	fk.dwFlags = flags;  // Enable FilterKeys
+	fk.iWaitMSec = ignoreUnder;    // "Ignore under" - Time before accepting a key press
+	fk.iDelayMSec = repeatDelay;   // "Repeat delay" - Time before repeating starts
+	fk.iRepeatMSec = repeatRate;   // "Repeat rate" - Speed of key repeats
+
+	SystemParametersInfo(SPI_SETFILTERKEYS, 0, &fk, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+}
+
+void SetMode(PresetMode mode)
+{
+	if (mode == PresetMode::DEFAULT)
+	{
+		SetScreenResolution(0, 1920, 1080, 60.0f);
+		SetScreenResolution(1, 1280, 1024, 75.025f);
+		SetFilterKeysParameters(0x78, 1000, 1000, 500);
+	}
+	else
+	{
+		SetScreenResolution(0, 1280, 720, 75.025f);
+		SetScreenResolution(1, 1280, 1024, 75.025f);
+		SetFilterKeysParameters(0x1, 0, 90, 20);
+	}
+}
+
+void SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq)
 {
 	//DWORD DispNum = 0;
 	DISPLAY_DEVICE DisplayDevice;
@@ -106,7 +122,7 @@ bool SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq)
 	if (EnumDisplayDevices(NULL, nDisplay, &DisplayDevice, 0))
 	{
 		if (!EnumDisplaySettings(DisplayDevice.DeviceName, ENUM_CURRENT_SETTINGS, &devMode))
-			return false;
+			return;
 
 		devMode.dmPelsWidth = nWidth;
 		devMode.dmPelsHeight = nHeight;
@@ -120,10 +136,10 @@ bool SetScreenResolution(int nDisplay, int nWidth, int nHeight, float freq)
 			char str[133];
 			sprintf_s(str, sizeof(str), "Hiba: %d", a);
 			MessageBox(mainwindow, str, "ResChanger", MB_OK);
-			return false;
+			return;
 		}
 	}
-	return true;
+	return;
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -138,22 +154,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_COMMAND:
 		{
-			if (LOWORD(wParam) == HDBTN) {
-				if (SetScreenResolution(0, 1280, 720, 75.025f) == 1 && 
-					SetScreenResolution(1, 1280, 1024, 75.025f) == 1)
-				{
-					EnableWindow(hdbutton, false);
-					EnableWindow(fhdbutton, true);
-				}
+			if (LOWORD(wParam) == PLAY_MODE_BTN) 
+			{
+			
+				SetMode(PresetMode::PLAY);
+				
 			}
 
-			if (LOWORD(wParam) == FHDBTN) {
-				if (SetScreenResolution(0, 1920, 1080, 60.0f) == 1 &&
-					SetScreenResolution(1, 1280, 1024, 75.025f) == 1)
-				{
-					EnableWindow(hdbutton, true);
-					EnableWindow(fhdbutton, false);
-				}
+			if (LOWORD(wParam) == DEF_MODE_BTN) 
+			{
+				SetMode(PresetMode::DEFAULT);
 			}
 		}
 	}

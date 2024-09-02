@@ -1,0 +1,4 @@
+﻿  main.cpp
+D:\Projects\ResChanger\ResChanger\main.cpp(56,16): warning C4312: 'type cast': conversion from 'LONG' to 'HINSTANCE' of greater size
+D:\Projects\ResChanger\ResChanger\main.cpp(57,18): warning C4312: 'type cast': conversion from 'LONG' to 'HINSTANCE' of greater size
+  ResChanger.vcxproj -> D:\Projects\ResChanger\x64\Debug\ResChanger.exe

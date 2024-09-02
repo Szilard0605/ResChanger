@@ -1,0 +1,9 @@
+﻿  main.cpp
+D:\Projects\ResChanger\ResChanger\main.cpp(56,16): warning C4312: 'type cast': conversion from 'LONG' to 'HINSTANCE' of greater size
+D:\Projects\ResChanger\ResChanger\main.cpp(57,18): warning C4312: 'type cast': conversion from 'LONG' to 'HINSTANCE' of greater size
+  Generating code
+  4 of 8 functions (50.0%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  ResChanger.vcxproj -> D:\Projects\ResChanger\x64\Release\ResChanger.exe
