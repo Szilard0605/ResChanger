@@ -1,6 +1,8 @@
 #include <iostream>
 #include <windows.h>
 #include <assert.h>
+#include <format>
+#include <string>
 
 using namespace std;
 
@@ -10,6 +12,9 @@ static HWND defModeBttn;
 
 #define PLAY_MODE_BTN (100)
 #define DEF_MODE_BTN  (99)
+
+#define SCROLL_LINES_DEFAULT 5
+#define SCROLL_LINES_PLAYMODE 20
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -91,6 +96,14 @@ void SetFilterKeysParameters(DWORD flags, DWORD ignoreUnder, DWORD repeatDelay, 
 	SystemParametersInfo(SPI_SETFILTERKEYS, 0, &fk, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 }
 
+void SetScrollLines(int lines)
+{
+	if (!SystemParametersInfo(SPI_SETWHEELSCROLLLINES, lines, 0, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE))
+	{
+		MessageBox(NULL, std::format("Failed to set croll lines count to: {}", lines).c_str(), "ResChanger", MB_OK);
+	}
+}
+
 void SetMode(PresetMode mode)
 {
 	if (mode == PresetMode::DEFAULT)
@@ -98,12 +111,14 @@ void SetMode(PresetMode mode)
 		SetScreenResolution(0, 1920, 1080, 60.0f);
 		SetScreenResolution(1, 1280, 1024, 75.025f);
 		SetFilterKeysParameters(0x78, 1000, 1000, 500);
+		SetScrollLines(SCROLL_LINES_DEFAULT);
 	}
 	else
 	{
 		SetScreenResolution(0, 1280, 720, 75.025f);
 		SetScreenResolution(1, 1280, 1024, 75.025f);
 		SetFilterKeysParameters(0x1, 0, 90, 20);
+		SetScrollLines(SCROLL_LINES_PLAYMODE);
 	}
 }
 
