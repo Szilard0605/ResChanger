@@ -108,15 +108,13 @@ void SetMode(PresetMode mode)
 {
 	if (mode == PresetMode::DEFAULT)
 	{
-		SetScreenResolution(0, 1920, 1080, 60.0f);
-		SetScreenResolution(1, 1280, 1024, 75.025f);
+		SetScreenResolution(0, 1920, 1080, 180.0f);
 		SetFilterKeysParameters(0x78, 1000, 1000, 500);
 		SetScrollLines(SCROLL_LINES_DEFAULT);
 	}
 	else
 	{
-		SetScreenResolution(0, 1280, 720, 75.025f);
-		SetScreenResolution(1, 1280, 1024, 75.025f);
+		SetScreenResolution(0, 1280, 720, 144.0f);
 		SetFilterKeysParameters(0x1, 0, 90, 20);
 		SetScrollLines(SCROLL_LINES_PLAYMODE);
 	}
